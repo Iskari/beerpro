@@ -165,7 +165,7 @@
                 app:layout_constraintTop_toBottomOf="@+id/separator5">
 
                 <Button
-                    android:id="@+id/button"
+                    android:id="@+id/addPlace"
                     style="?android:attr/borderlessButtonStyle"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"

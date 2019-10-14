@@ -8,6 +8,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.RatingBar;
@@ -63,6 +64,9 @@ public class CreateRatingActivity extends AppCompatActivity {
     @BindView(R.id.photoExplanation)
     TextView photoExplanation;
 
+    @BindView(R.id.addPlace)
+    Button addPlace;
+
     private CreateRatingViewModel model;
 
     @Override
@@ -114,6 +118,11 @@ public class CreateRatingActivity extends AppCompatActivity {
             photo.setImageURI(model.getPhoto());
             photoExplanation.setText(null);
         }
+
+        addPlace.setOnClickListener((v) -> {
+            Intent myIntent = new Intent(this, RatingPlaceActivity.class);
+            startActivity(myIntent);
+        });
     }
 
 

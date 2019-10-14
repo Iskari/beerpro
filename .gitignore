@@ -12,3 +12,4 @@
 .externalNativeBuild
 /app/google-services.json
 /scripts/service-key.json
+google_maps_api.xml
