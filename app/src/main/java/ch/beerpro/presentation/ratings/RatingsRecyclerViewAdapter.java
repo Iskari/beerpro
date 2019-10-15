@@ -1,5 +1,7 @@
 package ch.beerpro.presentation.ratings;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -97,6 +99,12 @@ public class RatingsRecyclerViewAdapter extends ListAdapter<Pair<Rating, Wish>, 
         @BindView(R.id.photo)
         ImageView photo;
 
+        @BindView(R.id.beerPlace)
+        TextView beerPlaceText;
+
+        @BindView(R.id.placeIcon)
+        ImageView placeIcon;
+
         ViewHolder(View view) {
             super(view);
             ButterKnife.bind(this, itemView);
@@ -107,6 +115,19 @@ public class RatingsRecyclerViewAdapter extends ListAdapter<Pair<Rating, Wish>, 
             // with databinding!
             beerName.setText(item.getBeerName());
             comment.setText(item.getComment());
+
+            if (item.getBeerPlace() != null){
+                beerPlaceText.setText(item.getBeerPlace().getName() + ", " + item.getBeerPlace().getAddress());
+                beerPlaceText.setOnClickListener((v) -> {
+                    Uri gmmIntentUri = Uri.parse("geo:" + item.getBeerPlace().getLatitude() + "," + item.getBeerPlace().getLongitude() + "?q=" + item.getBeerPlace().getName() + ", " + item.getBeerPlace().getAddress());
+                    Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
+                    mapIntent.setPackage("com.google.android.apps.maps");
+                    fragment.startActivity(mapIntent);
+                });
+            }else{
+                beerPlaceText.setText("");
+                placeIcon.setVisibility(View.INVISIBLE);
+            }
 
             ratingBar.setNumStars(5);
             ratingBar.setRating(item.getRating());

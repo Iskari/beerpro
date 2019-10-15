@@ -101,7 +101,7 @@ public class DetailsActivity extends AppCompatActivity implements OnRatingLikedL
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(layoutManager);
 
-        adapter = new RatingsRecyclerViewAdapter(this, model.getCurrentUser());
+        adapter = new RatingsRecyclerViewAdapter(this, this, model.getCurrentUser());
         recyclerView.addItemDecoration(new DividerItemDecoration(this, layoutManager.getOrientation()));
 
         model.getBeer().observe(this, this::updateBeer);

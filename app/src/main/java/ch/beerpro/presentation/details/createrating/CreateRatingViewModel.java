@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.Date;
 
 import ch.beerpro.domain.models.Beer;
+import ch.beerpro.domain.models.BeerPlace;
 import ch.beerpro.domain.models.Rating;
 import ch.beerpro.presentation.utils.EntityClassSnapshotParser;
 
@@ -27,6 +28,7 @@ public class CreateRatingViewModel extends ViewModel {
     private EntityClassSnapshotParser<Rating> parser = new EntityClassSnapshotParser<>(Rating.class);
     private Beer item;
     private Uri photo;
+    private BeerPlace beerPlace;
 
     public Beer getItem() {
         return item;
@@ -44,7 +46,15 @@ public class CreateRatingViewModel extends ViewModel {
         this.photo = photo;
     }
 
-    public Task<Rating> saveRating(Beer item, float rating, String comment, Uri localPhotoUri) {
+    public void setBeerPlace(BeerPlace bP){
+        beerPlace = bP;
+    }
+
+    public BeerPlace getBeerPlace() {
+        return beerPlace;
+    }
+
+    public Task<Rating> saveRating(Beer item, float rating, String comment, Uri localPhotoUri, BeerPlace localBeerPlace) {
 
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         assert user != null;
@@ -62,7 +72,7 @@ public class CreateRatingViewModel extends ViewModel {
             }
 
             Rating newRating = new Rating(null, item.getId(), item.getName(), user.getUid(), user.getDisplayName(),
-                    user.getPhotoUrl().toString(), photoUrl, rating, comment, Collections.emptyMap(), new Date());
+                    user.getPhotoUrl().toString(), photoUrl, beerPlace, rating, comment, Collections.emptyMap(), new Date());
             Log.i(TAG, "Adding new rating: " + newRating.toString());
             return FirebaseFirestore.getInstance().collection("ratings").add(newRating);
 

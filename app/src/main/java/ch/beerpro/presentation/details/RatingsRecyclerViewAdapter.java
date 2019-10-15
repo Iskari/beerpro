@@ -1,5 +1,8 @@
 package ch.beerpro.presentation.details;
 
+import android.app.Activity;
+import android.content.Intent;
+import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -29,12 +32,14 @@ public class RatingsRecyclerViewAdapter extends ListAdapter<Rating, RatingsRecyc
     private static final EntityDiffItemCallback<Rating> DIFF_CALLBACK = new EntityDiffItemCallback<>();
 
     private final OnRatingLikedListener listener;
+    private Activity caller;
     private FirebaseUser user;
 
-    public RatingsRecyclerViewAdapter(OnRatingLikedListener listener, FirebaseUser user) {
+    public RatingsRecyclerViewAdapter(OnRatingLikedListener listener, Activity caller, FirebaseUser user) {
         super(DIFF_CALLBACK);
         this.listener = listener;
         this.user = user;
+        this.caller = caller;
     }
 
     @NonNull
@@ -76,6 +81,12 @@ public class RatingsRecyclerViewAdapter extends ListAdapter<Rating, RatingsRecyc
         @BindView(R.id.photo)
         ImageView photo;
 
+        @BindView(R.id.beerPlace)
+        TextView beerPlaceText;
+
+        @BindView(R.id.placeIcon)
+        ImageView placeIcon;
+
         ViewHolder(View view) {
             super(view);
             ButterKnife.bind(this, itemView);
@@ -89,6 +100,19 @@ public class RatingsRecyclerViewAdapter extends ListAdapter<Rating, RatingsRecyc
             String formattedDate =
                     DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.SHORT).format(item.getCreationDate());
             date.setText(formattedDate);
+
+            if (item.getBeerPlace() != null){
+                beerPlaceText.setText(item.getBeerPlace().getName() + ", " + item.getBeerPlace().getAddress());
+                beerPlaceText.setOnClickListener((v) -> {
+                    Uri gmmIntentUri = Uri.parse("geo:" + item.getBeerPlace().getLatitude() + "," + item.getBeerPlace().getLongitude() + "?q=" + item.getBeerPlace().getName() + ", " + item.getBeerPlace().getAddress());
+                    Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
+                    mapIntent.setPackage("com.google.android.apps.maps");
+                    caller.startActivity(mapIntent);
+                });
+            }else{
+                beerPlaceText.setText("");
+                placeIcon.setVisibility(View.INVISIBLE);
+            }
 
             if (item.getPhoto() != null) {
                 GlideApp.with(itemView).load(item.getPhoto()).into(photo);

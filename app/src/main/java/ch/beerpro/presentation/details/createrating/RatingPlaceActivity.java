@@ -1,9 +1,11 @@
 package ch.beerpro.presentation.details.createrating;
 
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -11,6 +13,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
 
+import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -28,19 +31,20 @@ import com.google.android.gms.tasks.Task;
 
 import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.Place;
+import com.google.android.libraries.places.api.net.FetchPlaceRequest;
 import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment;
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener;
 
-
 import java.util.Arrays;
+import java.util.List;
 
 import ch.beerpro.R;
 
 public class RatingPlaceActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnPoiClickListener {
 
     private GoogleMap mMap;
-    private Marker myBeerMarker;
+    private Place beerPlace;
     private static final int DEFAULT_ZOOM = 15;
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
     private boolean mLocationPermissionGranted;
@@ -56,6 +60,10 @@ public class RatingPlaceActivity extends FragmentActivity implements OnMapReadyC
 
 
     private FusedLocationProviderClient mFusedLocationProviderClient;
+    private PlacesClient pClient;
+    List<Place.Field> placeFields = Arrays.asList(Place.Field.NAME, Place.Field.LAT_LNG, Place.Field.ADDRESS, Place.Field.ID);
+
+
 
 
     @Override
@@ -87,34 +95,63 @@ public class RatingPlaceActivity extends FragmentActivity implements OnMapReadyC
 
 
 
-        /**
-         * Initialize Places. For simplicity, the API key is hard-coded. In a production
-         * environment we recommend using a secure mechanism to manage API keys.
-         */
+        // Initialize Places.
         if (!Places.isInitialized()) {
-            Places.initialize(getApplicationContext(), getString(R.string.google_places_key));
+            Places.initialize(getApplicationContext(), getString(R.string.google_maps_key));
         }
+        pClient = Places.createClient(getApplicationContext());
 
         // Initialize the AutocompleteSupportFragment.
         AutocompleteSupportFragment autocompleteFragment = (AutocompleteSupportFragment)
                 getSupportFragmentManager().findFragmentById(R.id.autocomplete_fragment);
 
-        autocompleteFragment.setPlaceFields(Arrays.asList(Place.Field.ID, Place.Field.NAME));
+        assert autocompleteFragment != null;
+        autocompleteFragment.setPlaceFields(placeFields);
+        autocompleteFragment.setCountry("ch");
 
         autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
             @Override
             public void onPlaceSelected(Place place) {
                 // TODO: Get info about the selected place.
-                Log.i("Help", "Place: " + place.getName() + ", " + place.getId());
+                beerPlace = place;
+                Log.i(getString(R.string.app_name), "Place: " + place.getName() + ", " + place.getLatLng());
+                setBeerMarker(place.getLatLng(), place.getName() + "," + place.getAddress());
             }
 
             @Override
             public void onError(Status status) {
-                // TODO: Handle the error.
-                Log.i("Help", "An error occurred: " + status);
+                Toast.makeText(getApplicationContext(), "An error occured:" + status, Toast.LENGTH_SHORT).show();
+                Log.i(getString(R.string.app_name), "An error occurred: " + status);
             }
         });
 
+        Button recenter = findViewById(R.id.recenterButton);
+        recenter.setOnClickListener((v) ->{
+            getDeviceLocation();
+            mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(mLastKnownLocation.getLatitude(), mLastKnownLocation.getLongitude())));
+        });
+
+        Button ok = findViewById(R.id.okButton);
+        ok.setOnClickListener((v) -> {
+            Intent intent=new Intent();
+            intent.putExtra("HASDATA", false);
+            if(beerPlace != null) {
+                intent.putExtra("HASDATA", true);
+                intent.putExtra("ID", beerPlace.getId());
+                intent.putExtra("ADDRESS", beerPlace.getAddress());
+                intent.putExtra("NAME", beerPlace.getName());
+                intent.putExtra("LONGITUDE", beerPlace.getLatLng().longitude);
+                intent.putExtra("LATITUDE", beerPlace.getLatLng().latitude);
+            }
+            setResult(2,intent);
+            finish();//finishing activity
+        });
+
+        Button cancel = findViewById(R.id.cancelButton);
+        cancel.setOnClickListener((v) -> {
+            setResult(2);
+            finish();
+        });
     }
 
 
@@ -134,10 +171,7 @@ public class RatingPlaceActivity extends FragmentActivity implements OnMapReadyC
         mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
         mMap.moveCamera(CameraUpdateFactory.zoomTo(DEFAULT_ZOOM));
 
-        mMap.setOnMapClickListener((latlng) -> {
-            mMap.clear();
-            setBeerMarker(latlng, "myBeer");
-        });
+        mMap.setOnMapClickListener(this::getLocation);
         mMap.setOnPoiClickListener(this);
 
 
@@ -150,18 +184,46 @@ public class RatingPlaceActivity extends FragmentActivity implements OnMapReadyC
 
     @Override
     public void onPoiClick(PointOfInterest poi) {
-        Toast.makeText(getApplicationContext(), "Clicked: " +
-                        poi.name + "\nPlace ID:" + poi.placeId +
-                        "\nLatitude:" + poi.latLng.latitude +
-                        " Longitude:" + poi.latLng.longitude,
-                Toast.LENGTH_SHORT).show();
-        setBeerMarker(poi.latLng, poi.name);
+        FetchPlaceRequest fetchPlaceRequest = FetchPlaceRequest.builder(poi.placeId, placeFields).build();
+
+        pClient.fetchPlace(fetchPlaceRequest).addOnSuccessListener((response) -> {
+            beerPlace = response.getPlace();
+            setBeerMarker(beerPlace.getLatLng(), beerPlace.getName() + "," + beerPlace.getAddress());
+        }).addOnFailureListener((exception) -> {
+            if (exception instanceof ApiException) {
+                ApiException apiException = (ApiException) exception;
+                int statusCode = apiException.getStatusCode();
+                // Handle error with given status code.
+                Log.e(getString(R.string.app_name), "Place not found: " + exception.getMessage());
+            }
+        });
+
+    }
+
+    private void getLocation(LatLng place){
+        setBeerMarker(place, "FuckOff");
+        /*getDeviceLocation();
+
+        FindCurrentPlaceRequest request = FindCurrentPlaceRequest.builder(placeFields).build();
+        pClient.findCurrentPlace(request).addOnSuccessListener(((response) -> {
+            for (PlaceLikelihood placeLikelihood : response.getPlaceLikelihoods()) {
+                Log.i(getString(R.string.app_name), String.format("Place '%s' has likelihood: %f",
+                        placeLikelihood.getPlace().getName(),
+                        placeLikelihood.getLikelihood()));
+            }
+        })).addOnFailureListener((exception) -> {
+            if (exception instanceof ApiException) {
+                ApiException apiException = (ApiException) exception;
+                Log.e(getString(R.string.app_name), "Place not found: " + apiException.getStatusCode());
+            }
+        });*/
     }
 
 
     private void setBeerMarker(LatLng latlng, String title){
         mMap.clear();
-        myBeerMarker = mMap.addMarker(new MarkerOptions().position(latlng).title(title));
+        Marker myBeerMarker = mMap.addMarker(new MarkerOptions().position(latlng).title(title));
+        myBeerMarker.showInfoWindow();
         mMap.moveCamera(CameraUpdateFactory.newLatLng(latlng));
         Log.v("BeerMarker", myBeerMarker.getPosition().toString());
     }
@@ -230,6 +292,4 @@ public class RatingPlaceActivity extends FragmentActivity implements OnMapReadyC
             Log.e("Exception: %s", e.getMessage());
         }
     }
-
-
 }

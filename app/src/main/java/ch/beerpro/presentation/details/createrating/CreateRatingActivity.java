@@ -26,6 +26,7 @@ import com.bumptech.glide.request.RequestOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.yalantis.ucrop.UCrop;
+import com.yalantis.ucrop.view.OverlayView;
 
 import java.io.File;
 import java.util.List;
@@ -36,6 +37,7 @@ import butterknife.ButterKnife;
 import ch.beerpro.GlideApp;
 import ch.beerpro.R;
 import ch.beerpro.domain.models.Beer;
+import ch.beerpro.domain.models.BeerPlace;
 import pl.aprilapps.easyphotopicker.DefaultCallback;
 import pl.aprilapps.easyphotopicker.EasyImage;
 import pl.tajchert.nammu.Nammu;
@@ -121,7 +123,7 @@ public class CreateRatingActivity extends AppCompatActivity {
 
         addPlace.setOnClickListener((v) -> {
             Intent myIntent = new Intent(this, RatingPlaceActivity.class);
-            startActivity(myIntent);
+            startActivityForResult(myIntent,2);
         });
     }
 
@@ -135,6 +137,21 @@ public class CreateRatingActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+
+        if(requestCode==2)
+        {
+            if(data != null && data.getBooleanExtra("HASDATA", false)){
+                String id = data.getStringExtra("ID");
+                String name = data.getStringExtra("NAME");
+                String address = data.getStringExtra("ADDRESS");
+                double latitude = data.getDoubleExtra("LATITUDE", 0);
+                double longitude = data.getDoubleExtra("LONGITUDE", 0);
+                model.setBeerPlace(new BeerPlace(id, name, address, latitude, longitude));
+                addPlace.setText(name + ", " + address);
+            }
+
+            return;
+        }
 
         EasyImage.handleActivityResult(requestCode, resultCode, data, this, new DefaultCallback() {
             @Override
@@ -228,12 +245,20 @@ public class CreateRatingActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    public void onResume(){
+        super.onResume();
+        if(model.getBeerPlace() != null){
+            addPlace.setText(model.getBeerPlace().getName() + ", " + model.getBeerPlace().getAddress());
+        }
+    }
+
     private void saveRating() {
         float rating = addRatingBar.getRating();
         String comment = ratingText.getText().toString();
         // TODO show a spinner!
         // TODO return the new rating to update the new average immediately
-        model.saveRating(model.getItem(), rating, comment, model.getPhoto())
+        model.saveRating(model.getItem(), rating, comment, model.getPhoto(), model.getBeerPlace())
                 .addOnSuccessListener(task -> onBackPressed())
                 .addOnFailureListener(error -> Log.e(TAG, "Could not save rating", error));
     }

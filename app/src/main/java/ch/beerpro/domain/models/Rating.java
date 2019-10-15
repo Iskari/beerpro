@@ -24,6 +24,7 @@ public class Rating implements Entity {
     private String photo;
     private float rating;
     private String comment;
+    private BeerPlace beerPlace;
 
     /**
      * We use a Map instead of an Array to be able to query it.
@@ -33,7 +34,7 @@ public class Rating implements Entity {
     private Map<String, Boolean> likes;
     private Date creationDate;
 
-    public Rating(String id, String beerId, String beerName, String userId, String userName, String userPhoto, String photo, float rating, String comment, Map<String, Boolean> likes, Date creationDate) {
+    public Rating(String id, String beerId, String beerName, String userId, String userName, String userPhoto, String photo, BeerPlace beerPlace, float rating, String comment, Map<String, Boolean> likes, Date creationDate) {
         this.id = id;
         this.beerId = beerId;
         this.beerName = beerName;
@@ -45,6 +46,7 @@ public class Rating implements Entity {
         this.comment = comment;
         this.likes = likes;
         this.creationDate = creationDate;
+        this.beerPlace = beerPlace;
     }
 
     public Rating() {
@@ -94,6 +96,10 @@ public class Rating implements Entity {
         return this.creationDate;
     }
 
+    public BeerPlace getBeerPlace() {
+        return beerPlace;
+    }
+
     public void setId(String id) {
         this.id = id;
     }
@@ -138,6 +144,10 @@ public class Rating implements Entity {
         this.creationDate = creationDate;
     }
 
+    public void setBeerPlace(BeerPlace beerPlace) {
+        this.beerPlace = beerPlace;
+    }
+
     public boolean equals(final Object o) {
         if (o == this) return true;
         if (!(o instanceof Rating)) return false;
@@ -169,6 +179,10 @@ public class Rating implements Entity {
         final Object this$photo = this.getPhoto();
         final Object other$photo = other.getPhoto();
         if (this$photo == null ? other$photo != null : !this$photo.equals(other$photo))
+            return false;
+        final Object this$beerPlace = this.getBeerPlace();
+        final Object other$beerPlace = other.getBeerPlace();
+        if (this$beerPlace == null ? other$beerPlace != null : !this$beerPlace.equals(other$beerPlace))
             return false;
         if (Float.compare(this.getRating(), other.getRating()) != 0) return false;
         final Object this$comment = this.getComment();
@@ -212,11 +226,16 @@ public class Rating implements Entity {
         result = result * PRIME + ($likes == null ? 43 : $likes.hashCode());
         final Object $creationDate = this.getCreationDate();
         result = result * PRIME + ($creationDate == null ? 43 : $creationDate.hashCode());
+        final Object $beerPlace = this.getBeerPlace();
+        result = result * PRIME + ($beerPlace == null ? 43 : $beerPlace.hashCode());
         return result;
     }
 
     @NonNull
     public String toString() {
+        if(getBeerPlace() != null){
+            return "Rating(id=" + this.getId() + ", beerId=" + this.getBeerId() + ", beerName=" + this.getBeerName() + ", userId=" + this.getUserId() + ", userName=" + this.getUserName() + ", userPhoto=" + this.getUserPhoto() + ", photo=" + this.getPhoto() + ", rating=" + this.getRating() + ", comment=" + this.getComment() + ", likes=" + this.getLikes() + ", creationDate=" + this.getCreationDate() + "beerPlace:" + beerPlace.getName() + ", " + beerPlace.getAddress() +")";
+        }
         return "Rating(id=" + this.getId() + ", beerId=" + this.getBeerId() + ", beerName=" + this.getBeerName() + ", userId=" + this.getUserId() + ", userName=" + this.getUserName() + ", userPhoto=" + this.getUserPhoto() + ", photo=" + this.getPhoto() + ", rating=" + this.getRating() + ", comment=" + this.getComment() + ", likes=" + this.getLikes() + ", creationDate=" + this.getCreationDate() + ")";
     }
 }
