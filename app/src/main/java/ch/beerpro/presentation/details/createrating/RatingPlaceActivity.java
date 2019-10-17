@@ -124,6 +124,7 @@ public class RatingPlaceActivity extends FragmentActivity implements OnMapReadyC
             public void onPlaceSelected(@NonNull Place place) {
                 if(place.getLatLng() != null) {
                     beerPlace = new BeerPlace(place.getId(), place.getName(), place.getAddress(), place.getLatLng().latitude, place.getLatLng().longitude);
+                    setBeerMarker(place.getLatLng(), beerPlace.getName() + ", " + beerPlace.getAddress());
                 }else{
                     Log.e(getString(R.string.app_name), "No coordinates in place");
                 }
