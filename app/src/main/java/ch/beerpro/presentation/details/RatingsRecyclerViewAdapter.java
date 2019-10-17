@@ -16,7 +16,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.request.RequestOptions;
 import com.google.firebase.auth.FirebaseUser;
-
 import java.text.DateFormat;
 
 import butterknife.BindView;
@@ -101,10 +100,18 @@ public class RatingsRecyclerViewAdapter extends ListAdapter<Rating, RatingsRecyc
                     DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.SHORT).format(item.getCreationDate());
             date.setText(formattedDate);
 
-            if (item.getBeerPlace() != null){
-                beerPlaceText.setText(item.getBeerPlace().getName() + ", " + item.getBeerPlace().getAddress());
+            if(item.getBeerPlace() != null) {
+                String placeText = item.getBeerPlace().getName() + ", " + item.getBeerPlace().getAddress();
+                beerPlaceText.setText(placeText);
+                Uri gmmIntentUri;
+                if(item.getBeerPlace().getId() != null){
+                    gmmIntentUri = Uri.parse("geo:" + item.getBeerPlace().getLatitude() + "," + item.getBeerPlace().getLongitude() + "?q=" + item.getBeerPlace().getName() + ", " + item.getBeerPlace().getAddress());
+                }else{
+                    //Should put a label but does not currently because of https://issuetracker.google.com/issues/129726279
+                    gmmIntentUri = Uri.parse("geo:0,0?q=" + item.getBeerPlace().getLatitude() + "," + item.getBeerPlace().getLongitude() + "(" + item.getBeerPlace().getName() + item.getBeerPlace().getAddress() + ")");
+                }
+
                 beerPlaceText.setOnClickListener((v) -> {
-                    Uri gmmIntentUri = Uri.parse("geo:" + item.getBeerPlace().getLatitude() + "," + item.getBeerPlace().getLongitude() + "?q=" + item.getBeerPlace().getName() + ", " + item.getBeerPlace().getAddress());
                     Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
                     mapIntent.setPackage("com.google.android.apps.maps");
                     caller.startActivity(mapIntent);

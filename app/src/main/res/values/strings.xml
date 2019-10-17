@@ -105,4 +105,12 @@
     <string name="action_search">Bier suchen</string>
     <string name="title_activity_rating_place">BeerPlaces</string>
     <string name="title_activity_maps">Map</string>
+    <string name="ok">Ok</string>
+    <string name="cancel">Abbrechen</string>
+    <string name="createPlace">Ort hinzufügen</string>
+    <string name="placeName">Name</string>
+    <string name="address">Adresse</string>
+    <string name="setOwnPlace">Eigenen Ort hinzufügen</string>
+    <string name="noPlaceError">Alle Felder müssen ausgefüllt sein.</string>
+    <string name="choosePlace">Ort auswählen</string>
 </resources>

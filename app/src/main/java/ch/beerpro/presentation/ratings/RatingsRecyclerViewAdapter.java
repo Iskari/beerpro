@@ -116,10 +116,18 @@ public class RatingsRecyclerViewAdapter extends ListAdapter<Pair<Rating, Wish>, 
             beerName.setText(item.getBeerName());
             comment.setText(item.getComment());
 
-            if (item.getBeerPlace() != null){
-                beerPlaceText.setText(item.getBeerPlace().getName() + ", " + item.getBeerPlace().getAddress());
+            if(item.getBeerPlace() != null) {
+                String placeText = item.getBeerPlace().getName() + ", " + item.getBeerPlace().getAddress();
+                beerPlaceText.setText(placeText);
+                Uri gmmIntentUri;
+                if(item.getBeerPlace().getId() != null){
+                    gmmIntentUri = Uri.parse("geo:" + item.getBeerPlace().getLatitude() + "," + item.getBeerPlace().getLongitude() + "?q=" + item.getBeerPlace().getName() + ", " + item.getBeerPlace().getAddress());
+                }else{
+                    //Should put a label but does not currently because of https://issuetracker.google.com/issues/129726279
+                    gmmIntentUri = Uri.parse("geo:0,0?q=" + item.getBeerPlace().getLatitude() + "," + item.getBeerPlace().getLongitude() + "(" + item.getBeerPlace().getName() + item.getBeerPlace().getAddress() + ")");
+                }
+
                 beerPlaceText.setOnClickListener((v) -> {
-                    Uri gmmIntentUri = Uri.parse("geo:" + item.getBeerPlace().getLatitude() + "," + item.getBeerPlace().getLongitude() + "?q=" + item.getBeerPlace().getName() + ", " + item.getBeerPlace().getAddress());
                     Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
                     mapIntent.setPackage("com.google.android.apps.maps");
                     fragment.startActivity(mapIntent);

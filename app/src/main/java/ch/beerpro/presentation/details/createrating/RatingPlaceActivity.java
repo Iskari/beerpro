@@ -1,5 +1,6 @@
 package ch.beerpro.presentation.details.createrating;
 
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -13,6 +14,10 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -21,12 +26,10 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PointOfInterest;
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 
 import com.google.android.libraries.places.api.Places;
@@ -36,33 +39,37 @@ import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment;
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 import ch.beerpro.R;
+import ch.beerpro.domain.models.BeerPlace;
+import ch.beerpro.presentation.details.createrating.dialogs.NewPlaceDialog;
 
-public class RatingPlaceActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnPoiClickListener {
+public class RatingPlaceActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnPoiClickListener, NewPlaceDialog.PlaceDialogListener{
 
     private GoogleMap mMap;
-    private Place beerPlace;
+    private BeerPlace beerPlace;
     private static final int DEFAULT_ZOOM = 15;
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
     private boolean mLocationPermissionGranted;
 
     // Keys for storing activity state.
-    private static final String KEY_CAMERA_POSITION = "camera_position";
     private static final String KEY_LOCATION = "location";
 
     private Location mLastKnownLocation;
     private final LatLng mDefaultLocation = new LatLng(47.3774337,8.4666756);
 
-    private CameraPosition mCameraPosition;
-
-
     private FusedLocationProviderClient mFusedLocationProviderClient;
     private PlacesClient pClient;
     List<Place.Field> placeFields = Arrays.asList(Place.Field.NAME, Place.Field.LAT_LNG, Place.Field.ADDRESS, Place.Field.ID);
 
+    private LatLng ownPlace;
 
 
 
@@ -73,14 +80,17 @@ public class RatingPlaceActivity extends FragmentActivity implements OnMapReadyC
         // Retrieve location and camera position from saved instance state.
         if (savedInstanceState != null) {
             mLastKnownLocation = savedInstanceState.getParcelable(KEY_LOCATION);
-            mCameraPosition = savedInstanceState.getParcelable(KEY_CAMERA_POSITION);
         }
 
         setContentView(R.layout.activity_rating_place);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+
+        if(mapFragment != null) {
+            mapFragment.getMapAsync(this);
+        }else{
+            makeToast("Map could not be loaded.");
+        }
 
 
 
@@ -111,16 +121,17 @@ public class RatingPlaceActivity extends FragmentActivity implements OnMapReadyC
 
         autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
             @Override
-            public void onPlaceSelected(Place place) {
-                // TODO: Get info about the selected place.
-                beerPlace = place;
-                Log.i(getString(R.string.app_name), "Place: " + place.getName() + ", " + place.getLatLng());
-                setBeerMarker(place.getLatLng(), place.getName() + "," + place.getAddress());
+            public void onPlaceSelected(@NonNull Place place) {
+                if(place.getLatLng() != null) {
+                    beerPlace = new BeerPlace(place.getId(), place.getName(), place.getAddress(), place.getLatLng().latitude, place.getLatLng().longitude);
+                }else{
+                    Log.e(getString(R.string.app_name), "No coordinates in place");
+                }
             }
 
             @Override
-            public void onError(Status status) {
-                Toast.makeText(getApplicationContext(), "An error occured:" + status, Toast.LENGTH_SHORT).show();
+            public void onError(@NonNull Status status) {
+                makeToast("An error occurred: " + status);
                 Log.i(getString(R.string.app_name), "An error occurred: " + status);
             }
         });
@@ -140,8 +151,8 @@ public class RatingPlaceActivity extends FragmentActivity implements OnMapReadyC
                 intent.putExtra("ID", beerPlace.getId());
                 intent.putExtra("ADDRESS", beerPlace.getAddress());
                 intent.putExtra("NAME", beerPlace.getName());
-                intent.putExtra("LONGITUDE", beerPlace.getLatLng().longitude);
-                intent.putExtra("LATITUDE", beerPlace.getLatLng().latitude);
+                intent.putExtra("LONGITUDE", beerPlace.getLongitude());
+                intent.putExtra("LATITUDE", beerPlace.getLatitude());
             }
             setResult(2,intent);
             finish();//finishing activity
@@ -187,38 +198,93 @@ public class RatingPlaceActivity extends FragmentActivity implements OnMapReadyC
         FetchPlaceRequest fetchPlaceRequest = FetchPlaceRequest.builder(poi.placeId, placeFields).build();
 
         pClient.fetchPlace(fetchPlaceRequest).addOnSuccessListener((response) -> {
-            beerPlace = response.getPlace();
-            setBeerMarker(beerPlace.getLatLng(), beerPlace.getName() + "," + beerPlace.getAddress());
+            Place place = response.getPlace();
+            if(place.getLatLng() != null) {
+                beerPlace = new BeerPlace(place.getId(), place.getName(), place.getAddress(), place.getLatLng().latitude, place.getLatLng().longitude);
+            }else{
+                Log.e(getString(R.string.app_name), "No coordinates in place");
+            }
+
+            setBeerMarker(place.getLatLng(), place.getName() + "," + place.getAddress());
         }).addOnFailureListener((exception) -> {
             if (exception instanceof ApiException) {
                 ApiException apiException = (ApiException) exception;
                 int statusCode = apiException.getStatusCode();
                 // Handle error with given status code.
-                Log.e(getString(R.string.app_name), "Place not found: " + exception.getMessage());
+                Log.e(getString(R.string.app_name), "Place not found: " + exception.getMessage() + statusCode);
+                makeToast("Place not found: " + exception.getMessage() + statusCode);
             }
         });
 
     }
 
     private void getLocation(LatLng place){
-        setBeerMarker(place, "FuckOff");
-        /*getDeviceLocation();
+        LinkedList<BeerPlace> beerPlaces = new LinkedList<>();
 
-        FindCurrentPlaceRequest request = FindCurrentPlaceRequest.builder(placeFields).build();
-        pClient.findCurrentPlace(request).addOnSuccessListener(((response) -> {
-            for (PlaceLikelihood placeLikelihood : response.getPlaceLikelihoods()) {
-                Log.i(getString(R.string.app_name), String.format("Place '%s' has likelihood: %f",
-                        placeLikelihood.getPlace().getName(),
-                        placeLikelihood.getLikelihood()));
-            }
-        })).addOnFailureListener((exception) -> {
-            if (exception instanceof ApiException) {
-                ApiException apiException = (ApiException) exception;
-                Log.e(getString(R.string.app_name), "Place not found: " + apiException.getStatusCode());
-            }
-        });*/
+        String url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=" + place.latitude + "," + place.longitude + "&radius=50&key=" + getString(R.string.google_api_key);
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
+                (Request.Method.GET, url, null, response -> {
+                    try {
+                        JSONArray array = response.getJSONArray("results");
+                        for (int i = 0; i < array.length(); i++) {
+                            JSONObject c = array.getJSONObject(i);
+                            String name = c.getString("name");
+                            String id = c.getString("place_id");
+                            String address = c.getString("vicinity");
+
+                            JSONObject geometry = c.getJSONObject("geometry");
+                            JSONObject location = geometry.getJSONObject("location");
+                            double latitude = location.getDouble("lat");
+                            double longitude = location.getDouble("lng");
+
+                            BeerPlace temp = new BeerPlace(id, name, address, latitude, longitude);
+                            beerPlaces.add(temp);
+                        }
+                        showPlacesDialog(beerPlaces, place);
+                    } catch (JSONException e) {
+                            Log.e(getString(R.string.app_name), e.getMessage());
+                    }
+                }, error -> {
+                    Log.e(getString(R.string.app_name), "Error occured on nearby request: " + error.getMessage());
+                    makeToast("Error occured on nearby request:" + error.getMessage());
+                });
+
+        RequestQueue queue = Volley.newRequestQueue(this);
+        queue.add(jsonObjectRequest);
     }
 
+    private void showPlacesDialog(LinkedList<BeerPlace> beerPlaces, LatLng place){
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        CharSequence[] names = new CharSequence[beerPlaces.size()+1];
+        names[0] = getString(R.string.setOwnPlace);
+        for(int i = 0; i < beerPlaces.size(); i++){
+            names[i+1] = beerPlaces.get(i).getName();
+        }
+        builder.setTitle(getString(R.string.choosePlace));
+        builder.setItems(names, (dialog, which) -> {
+            if(which == 0){
+                showNewPlaceDialog(place);
+            }else {
+                beerPlace = beerPlaces.get(which-1);
+                setBeerMarker(new LatLng(beerPlace.getLatitude(), beerPlace.getLongitude()), beerPlace.getName() + "," + beerPlace.getAddress());
+            }
+        });
+        builder.setCancelable(true);
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+    private void showNewPlaceDialog(LatLng place){
+        ownPlace = place;
+        NewPlaceDialog placeDialog = new NewPlaceDialog();
+        placeDialog.show(getSupportFragmentManager(), "PlaceDialogFragment");
+    }
+
+    @Override
+    public void onDialogPositiveClick(String name, String address) {
+        beerPlace = new BeerPlace(null, name, address, ownPlace.latitude, ownPlace.longitude);
+        setBeerMarker(ownPlace, name + ", " + address);
+    }
 
     private void setBeerMarker(LatLng latlng, String title){
         mMap.clear();
@@ -270,26 +336,26 @@ public class RatingPlaceActivity extends FragmentActivity implements OnMapReadyC
         try {
             if (mLocationPermissionGranted) {
                 Task locationResult = mFusedLocationProviderClient.getLastLocation();
-                locationResult.addOnCompleteListener(this, new OnCompleteListener() {
-                    @Override
-                    public void onComplete(@NonNull Task task) {
-                        if (task.isSuccessful()) {
-                            // Set the map's camera position to the current location of the device.
-                            mLastKnownLocation = (Location) task.getResult();
-                            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                                    new LatLng(mLastKnownLocation.getLatitude(),
-                                            mLastKnownLocation.getLongitude()), DEFAULT_ZOOM));
-                        } else {
-                            Log.d(getString(R.string.app_name), "Current location is null. Using defaults.");
-                            Log.e(getString(R.string.app_name), "Exception: %s", task.getException());
-                            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(mDefaultLocation, DEFAULT_ZOOM));
-                            mMap.getUiSettings().setMyLocationButtonEnabled(false);
-                        }
+                locationResult.addOnCompleteListener(this, task -> {
+                    if (task.isSuccessful()) {
+                        // Set the map's camera position to the current location of the device.
+                        mLastKnownLocation = (Location) task.getResult();
+                        assert mLastKnownLocation != null;
+                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(mLastKnownLocation.getLatitude(), mLastKnownLocation.getLongitude()), DEFAULT_ZOOM));
+                    } else {
+                        Log.d(getString(R.string.app_name), "Current location is null. Using defaults.");
+                        Log.e(getString(R.string.app_name), "Exception: %s", task.getException());
+                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(mDefaultLocation, DEFAULT_ZOOM));
+                        mMap.getUiSettings().setMyLocationButtonEnabled(false);
                     }
                 });
             }
         } catch(SecurityException e)  {
             Log.e("Exception: %s", e.getMessage());
         }
+    }
+
+    public void makeToast(String message){
+        Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
     }
 }
