@@ -1,5 +1,8 @@
 package ch.beerpro.presentation.profile.myratings;
 
+import android.app.Activity;
+import android.content.Intent;
+import android.net.Uri;
 import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -39,11 +42,13 @@ public class MyRatingsRecyclerViewAdapter
 
     private final OnMyRatingItemInteractionListener listener;
     private FirebaseUser user;
+    private Activity caller;
 
-    public MyRatingsRecyclerViewAdapter(OnMyRatingItemInteractionListener listener, FirebaseUser user) {
+    public MyRatingsRecyclerViewAdapter(OnMyRatingItemInteractionListener listener, FirebaseUser user, Activity caller) {
         super(DIFF_CALLBACK);
         this.listener = listener;
         this.user = user;
+        this.caller = caller;
     }
 
     @NonNull
@@ -95,6 +100,12 @@ public class MyRatingsRecyclerViewAdapter
         @BindView(R.id.photo)
         ImageView photo;
 
+        @BindView(R.id.beerPlace)
+        TextView beerPlaceText;
+
+        @BindView(R.id.placeIcon)
+        ImageView placeIcon;
+
         ViewHolder(View view) {
             super(view);
             ButterKnife.bind(this, itemView);
@@ -109,6 +120,27 @@ public class MyRatingsRecyclerViewAdapter
             String formattedDate =
                     DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.SHORT).format(item.getCreationDate());
             date.setText(formattedDate);
+
+            if(item.getBeerPlace() != null) {
+                String placeText = item.getBeerPlace().getName() + ", " + item.getBeerPlace().getAddress();
+                beerPlaceText.setText(placeText);
+                Uri gmmIntentUri;
+                if(item.getBeerPlace().getId() != null){
+                    gmmIntentUri = Uri.parse("geo:" + item.getBeerPlace().getLatitude() + "," + item.getBeerPlace().getLongitude() + "?q=" + item.getBeerPlace().getName() + ", " + item.getBeerPlace().getAddress());
+                }else{
+                    //Should put a label but does not currently because of https://issuetracker.google.com/issues/129726279
+                    gmmIntentUri = Uri.parse("geo:0,0?q=" + item.getBeerPlace().getLatitude() + "," + item.getBeerPlace().getLongitude() + "(" + item.getBeerPlace().getName() + item.getBeerPlace().getAddress() + ")");
+                }
+
+                beerPlaceText.setOnClickListener((v) -> {
+                    Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
+                    mapIntent.setPackage("com.google.android.apps.maps");
+                    caller.startActivity(mapIntent);
+                });
+            }else{
+                beerPlaceText.setText("");
+                placeIcon.setVisibility(View.INVISIBLE);
+            }
 
             if (item.getPhoto() != null) {
                 // Take a look at https://bumptech.github.io/glide/int/recyclerview.html

@@ -46,7 +46,7 @@ public class MyRatingsActivity extends AppCompatActivity implements OnMyRatingIt
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(layoutManager);
 
-        adapter = new MyRatingsRecyclerViewAdapter(this, model.getCurrentUser());
+        adapter = new MyRatingsRecyclerViewAdapter(this, model.getCurrentUser(), this);
 
         recyclerView.setAdapter(adapter);
 
