@@ -8,6 +8,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -69,6 +70,9 @@ public class CreateRatingActivity extends AppCompatActivity {
     @BindView(R.id.addPlace)
     Button addPlace;
 
+    @BindView(R.id.removePlace)
+    Button removePlace;
+
     private CreateRatingViewModel model;
 
     @Override
@@ -123,8 +127,25 @@ public class CreateRatingActivity extends AppCompatActivity {
 
         addPlace.setOnClickListener((v) -> {
             Intent myIntent = new Intent(this, RatingPlaceActivity.class);
+            if(model.getBeerPlace() != null) {
+                Bundle bundle = new Bundle();
+                bundle.putSerializable("beerPlace", model.getBeerPlace());
+                myIntent.putExtras(bundle);
+            }
             startActivityForResult(myIntent,2);
         });
+
+        removePlace.setOnClickListener((v) -> {
+            model.setBeerPlace(null);
+            removePlace.setVisibility(View.GONE);
+            addPlace.setText(getString(R.string.createPlace));
+        });
+
+        if(model.getBeerPlace() != null){
+            removePlace.setVisibility(View.VISIBLE);
+            removePlace.setText(getString(R.string.removePlace));
+            addPlace.setText(getString(R.string.changePlace));
+        }
     }
 
 
@@ -148,6 +169,10 @@ public class CreateRatingActivity extends AppCompatActivity {
                 double longitude = data.getDoubleExtra("LONGITUDE", 0);
                 model.setBeerPlace(new BeerPlace(id, name, address, latitude, longitude));
                 addPlace.setText(name + ", " + address);
+
+                removePlace.setVisibility(View.VISIBLE);
+                removePlace.setText(getString(R.string.removePlace));
+                addPlace.setText(getString(R.string.changePlace));
             }
 
             return;

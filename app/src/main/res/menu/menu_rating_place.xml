@@ -1,13 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-
     <item
         android:id="@+id/cancel"
+        android:icon="@drawable/ic_cancel"
         android:title="@string/cancel" />
     <item
         android:id="@+id/recenter"
+        android:enabled="true"
+        android:icon="@drawable/ic_center"
         android:title="@string/recenter" />
     <item
         android:id="@+id/save"
+        android:icon="@drawable/ic_save"
         android:title="@string/save" />
 </menu>

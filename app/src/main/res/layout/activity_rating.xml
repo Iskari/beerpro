@@ -169,12 +169,26 @@
                     style="?android:attr/borderlessButtonStyle"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
+                    android:layout_weight="3"
                     android:drawableTop="@drawable/ic_more_horiz_black_24dp"
                     android:drawableTint="@android:color/darker_gray"
                     android:text="Ort Hinzufügen"
                     android:textColor="@android:color/darker_gray"
                     android:textSize="10sp" />
+
+                <Button
+                    android:id="@+id/removePlace"
+                    style="?android:attr/borderlessButtonStyle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:drawableTop="@drawable/ic_cancel"
+                    android:drawableTint="@android:color/darker_gray"
+                    android:text="Ort Hinzufügen"
+                    android:textColor="@android:color/darker_gray"
+                    android:textSize="10sp"
+                    android:visibility="gone" />
+
                 <!--
                                 <View
                                     android:layout_width="1dp"

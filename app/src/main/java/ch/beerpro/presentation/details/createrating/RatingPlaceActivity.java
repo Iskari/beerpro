@@ -6,7 +6,8 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.Button;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -38,6 +39,7 @@ import com.google.android.libraries.places.api.net.FetchPlaceRequest;
 import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment;
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -76,9 +78,14 @@ public class RatingPlaceActivity extends FragmentActivity implements OnMapReadyC
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
-
-
         super.onCreate(savedInstanceState);
+
+        Intent incomingIntent = this.getIntent();
+        Bundle bundle = incomingIntent.getExtras();
+        //Get place if set
+        if(bundle != null) {
+            beerPlace = (BeerPlace) bundle.getSerializable("beerPlace");
+        }
 
         // Retrieve location and camera position from saved instance state.
         if (savedInstanceState != null) {
@@ -140,32 +147,42 @@ public class RatingPlaceActivity extends FragmentActivity implements OnMapReadyC
             }
         });
 
-        Button recenter = findViewById(R.id.recenterButton);
-        recenter.setOnClickListener((v) ->{
-            getDeviceLocation();
-            mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(mLastKnownLocation.getLatitude(), mLastKnownLocation.getLongitude())));
-        });
+        BottomNavigationView bottomNav = findViewById(R.id.bottomNav);
+        Menu navMenu = bottomNav.getMenu();
 
-        Button ok = findViewById(R.id.okButton);
-        ok.setOnClickListener((v) -> {
-            Intent intent=new Intent();
-            intent.putExtra("HASDATA", false);
-            if(beerPlace != null) {
-                intent.putExtra("HASDATA", true);
-                intent.putExtra("ID", beerPlace.getId());
-                intent.putExtra("ADDRESS", beerPlace.getAddress());
-                intent.putExtra("NAME", beerPlace.getName());
-                intent.putExtra("LONGITUDE", beerPlace.getLongitude());
-                intent.putExtra("LATITUDE", beerPlace.getLatitude());
-            }
-            setResult(2,intent);
-            finish();//finishing activity
-        });
-
-        Button cancel = findViewById(R.id.cancelButton);
-        cancel.setOnClickListener((v) -> {
+        MenuItem cancel = navMenu.findItem(R.id.cancel);
+        cancel.setOnMenuItemClickListener((MenuItem me) -> {
             setResult(2);
             finish();
+            return true;
+        });
+
+        MenuItem recenter = navMenu.findItem(R.id.recenter);
+        recenter.setOnMenuItemClickListener((MenuItem me) -> {
+            getDeviceLocation();
+            //mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(mLastKnownLocation.getLatitude(), mLastKnownLocation.getLongitude())));
+           return true;
+        });
+
+        MenuItem save = navMenu.findItem(R.id.save);
+        save.setOnMenuItemClickListener((MenuItem me) -> {
+            if(beerPlace == null) {
+                makeToast(getString(R.string.noPlace));
+            }else {
+                Intent intent = new Intent();
+                intent.putExtra("HASDATA", false);
+                if (beerPlace != null) {
+                    intent.putExtra("HASDATA", true);
+                    intent.putExtra("ID", beerPlace.getId());
+                    intent.putExtra("ADDRESS", beerPlace.getAddress());
+                    intent.putExtra("NAME", beerPlace.getName());
+                    intent.putExtra("LONGITUDE", beerPlace.getLongitude());
+                    intent.putExtra("LATITUDE", beerPlace.getLatitude());
+                }
+                setResult(2, intent);
+                finish();//finishing activity
+            }
+           return true;
         });
     }
 
@@ -193,8 +210,12 @@ public class RatingPlaceActivity extends FragmentActivity implements OnMapReadyC
 
         updateLocationUI();
 
-        // Get the current location of the device and set the position of the map.
-        getDeviceLocation();
+        if(beerPlace == null) {
+            // Get the current location of the device and set the position of the map.
+            getDeviceLocation();
+        }else{
+            setBeerMarker(new LatLng(beerPlace.getLatitude(), beerPlace.getLongitude()), beerPlace.getName() + ", " + beerPlace.getAddress());
+        }
     }
 
     @Override
