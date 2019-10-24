@@ -75,6 +75,9 @@ public class RatingPlaceActivity extends FragmentActivity implements OnMapReadyC
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+
+
         super.onCreate(savedInstanceState);
 
         // Retrieve location and camera position from saved instance state.
