@@ -170,14 +170,10 @@ public class RatingPlaceActivity extends FragmentActivity implements OnMapReadyC
                 makeToast(getString(R.string.noPlace));
             }else {
                 Intent intent = new Intent();
-                intent.putExtra("HASDATA", false);
                 if (beerPlace != null) {
-                    intent.putExtra("HASDATA", true);
-                    intent.putExtra("ID", beerPlace.getId());
-                    intent.putExtra("ADDRESS", beerPlace.getAddress());
-                    intent.putExtra("NAME", beerPlace.getName());
-                    intent.putExtra("LONGITUDE", beerPlace.getLongitude());
-                    intent.putExtra("LATITUDE", beerPlace.getLatitude());
+                    Bundle sendBundle = new Bundle();
+                    sendBundle.putSerializable("beerPlace", beerPlace);
+                    intent.putExtras(sendBundle);
                 }
                 setResult(2, intent);
                 finish();//finishing activity

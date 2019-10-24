@@ -161,18 +161,16 @@ public class CreateRatingActivity extends AppCompatActivity {
 
         if(requestCode==2)
         {
-            if(data != null && data.getBooleanExtra("HASDATA", false)){
-                String id = data.getStringExtra("ID");
-                String name = data.getStringExtra("NAME");
-                String address = data.getStringExtra("ADDRESS");
-                double latitude = data.getDoubleExtra("LATITUDE", 0);
-                double longitude = data.getDoubleExtra("LONGITUDE", 0);
-                model.setBeerPlace(new BeerPlace(id, name, address, latitude, longitude));
-                addPlace.setText(name + ", " + address);
+            if(data != null){
+                Bundle bundle = data.getExtras();
+                if(bundle != null){
+                    model.setBeerPlace((BeerPlace) bundle.getSerializable("beerPlace"));
+                    addPlace.setText(model.getBeerPlace().getName() + ", " + model.getBeerPlace().getAddress());
 
-                removePlace.setVisibility(View.VISIBLE);
-                removePlace.setText(getString(R.string.removePlace));
-                addPlace.setText(getString(R.string.changePlace));
+                    removePlace.setVisibility(View.VISIBLE);
+                    removePlace.setText(getString(R.string.removePlace));
+                    addPlace.setText(getString(R.string.changePlace));
+                }
             }
 
             return;
