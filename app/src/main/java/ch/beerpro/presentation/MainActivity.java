@@ -18,6 +18,7 @@ import com.google.android.material.tabs.TabLayout;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import ch.beerpro.R;
+import ch.beerpro.presentation.beerMap.FragmentBeerMap;
 import ch.beerpro.presentation.explore.BeerCategoriesFragment;
 import ch.beerpro.presentation.explore.BeerManufacturersFragment;
 import ch.beerpro.presentation.explore.ExploreFragment;
@@ -74,11 +75,13 @@ public class MainActivity extends AppCompatActivity
         adapter.addFragment(new ExploreFragment());
         adapter.addFragment(new RatingsFragment());
         adapter.addFragment(new ProfileFragment());
+        adapter.addFragment(new FragmentBeerMap());
         viewPager.setAdapter(adapter);
         tabLayout.setupWithViewPager(viewPager);
         tabLayout.getTabAt(0).setIcon(R.drawable.ic_search_black_24dp);
         tabLayout.getTabAt(1).setIcon(R.drawable.ic_people_black_24dp);
         tabLayout.getTabAt(2).setIcon(R.drawable.ic_person_black_24dp);
+        tabLayout.getTabAt(3).setIcon(R.drawable.ic_bottle);
 
         /*
          * We want to change the title of the activity depending on the selected fragment. We can do this by
