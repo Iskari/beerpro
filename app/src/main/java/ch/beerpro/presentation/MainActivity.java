@@ -81,7 +81,7 @@ public class MainActivity extends AppCompatActivity
         tabLayout.getTabAt(0).setIcon(R.drawable.ic_search_black_24dp);
         tabLayout.getTabAt(1).setIcon(R.drawable.ic_people_black_24dp);
         tabLayout.getTabAt(2).setIcon(R.drawable.ic_person_black_24dp);
-        tabLayout.getTabAt(3).setIcon(R.drawable.ic_bottle);
+        tabLayout.getTabAt(3).setIcon(android.R.drawable.ic_dialog_map);
 
         /*
          * We want to change the title of the activity depending on the selected fragment. We can do this by

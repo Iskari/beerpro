@@ -1,9 +1,11 @@
 package ch.beerpro.presentation.beerMap;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.SystemClock;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,11 +28,13 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.LiveData;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 
 import butterknife.ButterKnife;
-import ch.beerpro.GlideApp;
 import ch.beerpro.R;
 import ch.beerpro.data.repositories.RatingsRepository;
 import ch.beerpro.domain.models.BeerPlace;
@@ -157,11 +161,46 @@ public class FragmentBeerMap extends Fragment implements
             title.setText(context.getBeerName());
             description.setText(context.getComment());
             rating.setRating((int)context.getRating());
+            String photo = context.getPhoto();
             if (context.getPhoto() != null) {
-                GlideApp.with(image).load(context.getPhoto()).into(image);
-                image.setVisibility(View.VISIBLE);
+                final HandlerThread handlerThread = new HandlerThread("GetPhoto");
+                handlerThread.start();
+                final Handler handler = new Handler(handlerThread.getLooper());
+
+                class LoadImage implements java.lang.Runnable {
+                    public boolean notFinished = true;
+
+                    public void run() {
+                        try {
+
+                            Bitmap bmp = BitmapFactory.decodeStream((new URL(photo).openConnection().getInputStream()));
+                            image.setImageBitmap(bmp);
+                            image.setVisibility(View.VISIBLE);
+                        } catch (MalformedURLException e) {
+                            image.setVisibility(View.GONE);
+                        } catch (IOException e) {
+                            image.setVisibility(View.GONE);
+                        }
+                        synchronized (this) {
+                            this.notFinished = false;
+                            this.notify();
+                        }
+                    }
+                }
+
+                LoadImage runnable = new LoadImage();
+                handler.post(runnable);
+                synchronized (runnable) {
+                    try {
+                        while (runnable.notFinished) {
+                            runnable.wait();
+                            runnable.notify();
+                        }
+                    } catch (InterruptedException e) {
+                        image.setVisibility(View.GONE);
+                    }
+                }
             } else {
-                GlideApp.with(image).clear(image);
                 image.setVisibility(View.GONE);
             }
             return markerItemView;
