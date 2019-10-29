@@ -5,12 +5,9 @@ import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.os.SystemClock;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.BounceInterpolator;
-import android.view.animation.Interpolator;
 import android.widget.ImageView;
 import android.widget.RatingBar;
 import android.widget.TextView;
@@ -42,8 +39,7 @@ import ch.beerpro.domain.models.BeerPlace;
 import ch.beerpro.domain.models.Rating;
 
 public class FragmentBeerMap extends Fragment implements
-        OnMapReadyCallback,
-        GoogleMap.OnMarkerClickListener {
+        OnMapReadyCallback {
     private final LatLng mDefaultLocation = new LatLng(47.3774337,8.4666756);
     private static final int DEFAULT_ZOOM = 8;
 
@@ -76,31 +72,6 @@ public class FragmentBeerMap extends Fragment implements
         mMap.getUiSettings().setMapToolbarEnabled(false);
         mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
         googleMap.setInfoWindowAdapter(new BeerMapInfo());
-    }
-
-    @Override
-    public boolean onMarkerClick(final Marker marker) {
-        final Handler handler = new Handler();
-        final long start = SystemClock.uptimeMillis();
-        final long duration = 1500;
-
-        final Interpolator interpolator = new BounceInterpolator();
-
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                long elapsed = SystemClock.uptimeMillis() - start;
-                float t = Math.max(
-                        1 - interpolator.getInterpolation((float) elapsed / duration), 0);
-                marker.setAnchor(0.5f, 1.0f + 2 * t);
-
-                if (t > 0.0) {
-                    // Post again 16ms later.
-                    handler.postDelayed(this, 16);
-                }
-            }
-        });
-        return false;
     }
 
     private void updateRatings(List<Rating> ratings) {
