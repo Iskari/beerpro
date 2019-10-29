@@ -121,4 +121,8 @@
     <string name="noPlace">Kein Ort wurde ausgewählt.</string>
     <string name="changePlace">Ort ändern</string>
     <string name="removePlace">Ort löschen</string>
+    <string name="user_image">User supplied image</string>
+    <string name="person">Person</string>
+    <string name="location">Location</string>
+    <string name="no_comment">Sadly no comment :(</string>
 </resources>

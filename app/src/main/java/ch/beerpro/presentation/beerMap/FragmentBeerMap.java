@@ -25,6 +25,7 @@ import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.LiveData;
 
@@ -156,11 +157,24 @@ public class FragmentBeerMap extends Fragment implements
             if (context == null) return null;
             TextView title = markerItemView.findViewById(R.id.title);
             TextView description = markerItemView.findViewById(R.id.rating_description);
+            TextView poster = markerItemView.findViewById(R.id.poster);
+            TextView place = markerItemView.findViewById(R.id.place);
             ImageView image = markerItemView.findViewById(R.id.image);
             RatingBar rating = markerItemView.findViewById(R.id.rating);
+
             title.setText(context.getBeerName());
-            description.setText(context.getComment());
+            if(context.getComment().isEmpty()){
+                description.setText(R.string.no_comment);
+                description.setTextColor(ContextCompat.getColor(getContext(), R.color.quantum_grey200));
+            } else {
+                description.setText(context.getComment());
+                description.setTextColor(ContextCompat.getColor(getContext(), R.color.quantum_grey));
+            }
+            poster.setText(context.getUserName());
+            place.setText(context.getBeerPlace().getAddress());
+
             rating.setRating((int)context.getRating());
+
             String photo = context.getPhoto();
             if (context.getPhoto() != null) {
                 final HandlerThread handlerThread = new HandlerThread("GetPhoto");
@@ -172,7 +186,6 @@ public class FragmentBeerMap extends Fragment implements
 
                     public void run() {
                         try {
-
                             Bitmap bmp = BitmapFactory.decodeStream((new URL(photo).openConnection().getInputStream()));
                             image.setImageBitmap(bmp);
                             image.setVisibility(View.VISIBLE);
